@@ -4,17 +4,43 @@
   "apiProfile": "2018-03-01-hybrid",
   "parameters": { },
   "variables": {
-    "vnetName": "VNet1",
+    "vnetName": "myVNet",
+    "nsgName": "myNsg",
+    "nsgID": "[resourceId('Microsoft.Network/networkSecurityGroups',variables('nsgName'))]",
     "addressPrefix": "10.0.0.0/24",
     "subnetName": "Subnet-1",
-    "subnetPrefix": "10.0.0.0/24",
-    "dnsServer": "192.168.100.2"
+    "subnetPrefix": "10.0.0.0/24"
   },
   "resources": [
     {
-      "type": "Microsoft.Network/virtualNetworks",
-      "name": "[variables('vnetName')]",
+      "name": "[variables('nsgName')]",
+      "type": "Microsoft.Network/networkSecurityGroups",
       "location": "[resourceGroup().location]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "rule1",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "*",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 101,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[variables('vnetName')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]"
+      ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -25,13 +51,13 @@
           {
             "name": "[variables('subnetName')]",
             "properties": {
-              "addressPrefix": "[variables('subnetPrefix')]"
+              "addressPrefix": "[variables('subnetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[variables('nsgID')]"
+              }
             }
           }
-        ],
-        "dhcpOptions": {
-          "dnsServers": [ "[variables('dnsServer')]" ]
-        }
+        ]
       }
     }
   ],
